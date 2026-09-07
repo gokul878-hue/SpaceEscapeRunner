@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   repair-lock:
@@ -30,11 +30,15 @@ jobs:
       - name: Verify Expo compatibility
         run: npx expo install --check
 
-      - name: Upload repaired manifests
-        uses: actions/upload-artifact@v4
-        with:
-          name: repaired-expo-manifests
-          path: |
-            package.json
-            package-lock.json
-          if-no-files-found: error
+      - name: Commit repaired manifests
+        shell: bash
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Expo manifests are already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Update Expo SDK 54 patch dependencies"
+          git push
