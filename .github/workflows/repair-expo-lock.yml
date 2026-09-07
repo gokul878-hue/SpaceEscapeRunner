@@ -1,0 +1,40 @@
+name: Repair Expo Lock
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  repair-lock:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install current dependencies
+        run: npm ci
+
+      - name: Upgrade Expo patch and regenerate lockfile
+        run: npm install expo@~54.0.37 --save
+
+      - name: Verify Expo compatibility
+        run: npx expo install --check
+
+      - name: Upload repaired manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: repaired-expo-manifests
+          path: |
+            package.json
+            package-lock.json
+          if-no-files-found: error
